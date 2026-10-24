@@ -5,50 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Acta de Reunión por Voz</title>
   <style>
-    /* ... (Puedes pegar aquí los mismos estilos CSS que ya tenías para que se vea igual de bonito) ... */
-    body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
-    .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
-    textarea { width: 100%; height: 80px; margin-top: 5px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-    .mic-btn { background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-top: 5px; }
-    .mic-btn.listening { background: #27ae60; animation: pulse 1.5s infinite; }
-    button[type="submit"] { width: 100%; margin-top: 25px; padding: 15px; background: #2980b9; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    #status { text-align: center; margin-top: 15px; font-weight: bold; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; }
+    .container { max-width: 520px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #2c3e50; margin-top: 0; }
+    label { display: block; margin-top: 18px; font-weight: bold; font-size: 15px; color: #34495e; }
+    textarea { width: 100%; min-height: 80px; margin-top: 6px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; }
+    .mic-btn { background: #e74c3c; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-top: 6px; font-size: 14px; transition: background 0.2s; }
+    .mic-btn:hover { background: #c0392b; }
+    .mic-btn.listening { background: #27ae60; animation: pulse 1.2s infinite; }
+    .submit-btn { width: 100%; margin-top: 28px; padding: 15px; background: #2980b9; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+    .submit-btn:hover { background: #21618c; }
+    .submit-btn:disabled { background: #95a5a6; cursor: not-allowed; }
+    #status { text-align: center; margin-top: 16px; font-weight: bold; font-size: 14px; min-height: 20px; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    
+    /* Estilo para los guiones de referencia */
+    .guion { font-size: 12px; color: #7f8c8d; margin-top: 5px; margin-bottom: 5px; font-style: italic; line-height: 1.4; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Acta de Reunión Inicial</h2>
+    
     <form id="actaForm">
-      <label>4. Acuerdos anteriores:</label>
+
+      <label>4. Control y seguimiento de acuerdos anteriores:</label>
+      <p class="guion">Guion: Se realiza la primera reunión de seguimiento por lo que no proceden acuerdos anteriores.</p>
       <textarea id="acuerdos"></textarea>
       <button type="button" class="mic-btn" onclick="dictar('acuerdos', this)">🎤 Dictar</button>
 
       <label>5. Estado actual de la obra:</label>
+      <p class="guion">Guion: Se realizan trabajos de desmontaje de falso techo modular incluida antigua instalación de iluminación, realizándose sin tensión, y trabajos de retirada de restos. Como medios auxiliares se usa escalera de tijeras. Herramientas de mano y radial. Contrata ELECNOR SERVICIOS Y PROYECTOS, S.A.U.</p>
       <textarea id="estadoObra"></textarea>
       <button type="button" class="mic-btn" onclick="dictar('estadoObra', this)">🎤 Dictar</button>
 
       <label>6. Acceso personas autorizadas:</label>
+      <p class="guion">Guion: Se establecerán las medidas establecidas en el PSS para que la obra permanezca cerrada a agentes externos.</p>
       <textarea id="acceso"></textarea>
       <button type="button" class="mic-btn" onclick="dictar('acceso', this)">🎤 Dictar</button>
 
       <label>7. Previsión de medidas:</label>
+      <p class="guion">Guion: Se prevé continuar con trabajos de desmontaje de techos e instalaciones, según planificación. Se cuidará el orden y limpieza no acumulando material. Se cuidará la separación de zonas de trabajo y la señalización de acopios.</p>
       <textarea id="prevision"></textarea>
       <button type="button" class="mic-btn" onclick="dictar('prevision', this)">🎤 Dictar</button>
 
       <label>11. Fecha siguiente reunión:</label>
+      <p class="guion">Guion: Será convocada por el coordinador. (En 15 días).</p>
       <textarea id="fechaReunion"></textarea>
       <button type="button" class="mic-btn" onclick="dictar('fechaReunion', this)">🎤 Dictar</button>
 
-      <button type="submit" id="submitBtn">Generar y Enviar Acta</button>
+      <button type="submit" class="submit-btn" id="submitBtn">Generar y Enviar Acta</button>
       <div id="status"></div>
     </form>
   </div>
 
   <script>
-    // ⚠️ CAMBIA ESTO POR TU URL DEL PASO 2 ⚠️
-    const URL_API = "https://script.google.com/macros/s/AKfycbzhwEDwCVmoiW8K5iDGiBVz_E014HNGVMi-IsLFJePH69IO-3obYzM7Vv1gA43825y4/exec"; 
+    // ⚠️ IMPORTANTE: Asegúrate de que esta URL es la correcta de tu Google Apps Script (termina en /exec)
+    const URL_API = "https://script.google.com/macros/s/AKfycbzhwEDwCVmoiW8K5iDGIBVz_E014HNGVMi-lsLJePH69IO-3obYzM7Vv1gA43825y4/exec"; 
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition, activeBtn, activeId;
@@ -64,8 +78,13 @@
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal) text += event.results[i][0].transcript + ' ';
         }
-        if (text && activeId) document.getElementById(activeId).value += text;
+        if (text && activeId) {
+          const campo = document.getElementById(activeId);
+          // Si el campo está vacío, añade el texto. Si no, añade un espacio y el texto nuevo.
+          campo.value += (campo.value ? ' ' : '') + text;
+        }
       };
+      
       recognition.onend = () => { if (activeBtn) activeBtn.classList.remove('listening'); };
     }
 
@@ -104,10 +123,12 @@
         
         status.style.color = res.success ? "#27ae60" : "#e74c3c";
         status.textContent = res.mensaje;
-        if (res.success) document.getElementById('actaForm').reset();
+        if (res.success) {
+          document.getElementById('actaForm').reset();
+        }
       } catch (error) {
         status.style.color = "#e74c3c";
-        status.textContent = "Error de conexión.";
+        status.textContent = "Error de conexión. Revisa tu conexión a internet.";
       } finally {
         btn.disabled = false; btn.textContent = "Generar y Enviar Acta";
       }
