@@ -7,21 +7,52 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; }
-    .container { max-width: 520px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    
+    /* Contenedor principal (Móvil: ancho máximo 520px) */
+    .container { max-width: 520px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: max-width 0.3s ease; }
+    
     h2 { text-align: center; color: #2c3e50; margin-top: 0; }
     label { display: block; margin-top: 18px; font-weight: bold; font-size: 15px; color: #34495e; }
     textarea { width: 100%; min-height: 80px; margin-top: 6px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; }
+    
     .mic-btn { background: #e74c3c; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-top: 6px; font-size: 14px; transition: background 0.2s; }
     .mic-btn:hover { background: #c0392b; }
     .mic-btn.listening { background: #27ae60; animation: pulse 1.2s infinite; }
+    
     .submit-btn { width: 100%; margin-top: 28px; padding: 15px; background: #2980b9; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
     .submit-btn:hover { background: #21618c; }
     .submit-btn:disabled { background: #95a5a6; cursor: not-allowed; }
+    
     #status { text-align: center; margin-top: 16px; font-weight: bold; font-size: 14px; min-height: 20px; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    
-    /* Estilo para los guiones de referencia */
     .guion { font-size: 12px; color: #7f8c8d; margin-top: 5px; margin-bottom: 5px; font-style: italic; line-height: 1.4; }
+
+    /* =========================================
+       DISEÑO PARA PORTÁTIL / PANTALLAS GRANDES
+       ========================================= */
+    @media (min-width: 900px) {
+      .container {
+        max-width: 1100px; /* Se ensancha en el portátil */
+        padding: 40px;
+      }
+      
+      /* Creamos una cuadrícula de 2 columnas */
+      .grid-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px 40px; /* Separación entre filas y columnas */
+        align-items: start;
+      }
+
+      /* Hacemos que el botón de enviar y el estado ocupen todo el ancho abajo */
+      .full-width {
+        grid-column: 1 / -1;
+      }
+      
+      textarea {
+        min-height: 100px; /* Un poco más altos en el portátil */
+      }
+    }
   </style>
 </head>
 <body>
@@ -29,39 +60,55 @@
     <h2>Acta de Reunión Inicial</h2>
     
     <form id="actaForm">
+      <!-- Envolvemos los campos en este div "grid-form" para el diseño en 2 columnas -->
+      <div class="grid-form">
 
-      <label>4. Control y seguimiento de acuerdos anteriores:</label>
-      <p class="guion">Guion: Se realiza la primera reunión de seguimiento por lo que no proceden acuerdos anteriores.</p>
-      <textarea id="acuerdos"></textarea>
-      <button type="button" class="mic-btn" onclick="dictar('acuerdos', this)">🎤 Dictar</button>
+        <div>
+          <label>4. Control y seguimiento de acuerdos anteriores:</label>
+          <p class="guion">Guion: Se realiza la primera reunión de seguimiento por lo que no proceden acuerdos anteriores.</p>
+          <textarea id="acuerdos"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('acuerdos', this)">🎤 Dictar</button>
+        </div>
 
-      <label>5. Estado actual de la obra:</label>
-      <p class="guion">Guion: Se realizan trabajos de desmontaje de falso techo modular incluida antigua instalación de iluminación, realizándose sin tensión, y trabajos de retirada de restos. Como medios auxiliares se usa escalera de tijeras. Herramientas de mano y radial. Contrata ELECNOR SERVICIOS Y PROYECTOS, S.A.U.</p>
-      <textarea id="estadoObra"></textarea>
-      <button type="button" class="mic-btn" onclick="dictar('estadoObra', this)">🎤 Dictar</button>
+        <div>
+          <label>5. Estado actual de la obra:</label>
+          <p class="guion">Guion: Se realizan trabajos de desmontaje de falso techo modular incluida antigua instalación de iluminación...</p>
+          <textarea id="estadoObra"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('estadoObra', this)">🎤 Dictar</button>
+        </div>
 
-      <label>6. Acceso personas autorizadas:</label>
-      <p class="guion">Guion: Se establecerán las medidas establecidas en el PSS para que la obra permanezca cerrada a agentes externos.</p>
-      <textarea id="acceso"></textarea>
-      <button type="button" class="mic-btn" onclick="dictar('acceso', this)">🎤 Dictar</button>
+        <div>
+          <label>6. Acceso personas autorizadas:</label>
+          <p class="guion">Guion: Se establecerán las medidas establecidas en el PSS para que la obra permanezca cerrada a agentes externos.</p>
+          <textarea id="acceso"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('acceso', this)">🎤 Dictar</button>
+        </div>
 
-      <label>7. Previsión de medidas:</label>
-      <p class="guion">Guion: Se prevé continuar con trabajos de desmontaje de techos e instalaciones, según planificación. Se cuidará el orden y limpieza no acumulando material. Se cuidará la separación de zonas de trabajo y la señalización de acopios.</p>
-      <textarea id="prevision"></textarea>
-      <button type="button" class="mic-btn" onclick="dictar('prevision', this)">🎤 Dictar</button>
+        <div>
+          <label>7. Previsión de medidas:</label>
+          <p class="guion">Guion: Se prevé continuar con trabajos de desmontaje de techos e instalaciones...</p>
+          <textarea id="prevision"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('prevision', this)">🎤 Dictar</button>
+        </div>
 
-      <label>11. Fecha siguiente reunión:</label>
-      <p class="guion">Guion: Será convocada por el coordinador. (En 15 días).</p>
-      <textarea id="fechaReunion"></textarea>
-      <button type="button" class="mic-btn" onclick="dictar('fechaReunion', this)">🎤 Dictar</button>
+        <div class="full-width">
+          <label>11. Fecha siguiente reunión:</label>
+          <p class="guion">Guion: Será convocada por el coordinador. (En 15 días).</p>
+          <textarea id="fechaReunion"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('fechaReunion', this)">🎤 Dictar</button>
+        </div>
 
-      <button type="submit" class="submit-btn" id="submitBtn">Generar y Enviar Acta</button>
-      <div id="status"></div>
+        <div class="full-width">
+          <button type="submit" class="submit-btn" id="submitBtn">Generar y Enviar Acta</button>
+          <div id="status"></div>
+        </div>
+
+      </div>
     </form>
   </div>
 
   <script>
-    // ⚠️ IMPORTANTE: Asegúrate de que esta URL es la correcta de tu Google Apps Script (termina en /exec)
+    // ⚠️ Asegúrate de que esta es tu URL de Apps Script
     const URL_API = "https://script.google.com/macros/s/AKfycbzhwEDwCVmoiW8K5iDGIBVz_E014HNGVMi-lsLJePH69IO-3obYzM7Vv1gA43825y4/exec"; 
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -80,7 +127,6 @@
         }
         if (text && activeId) {
           const campo = document.getElementById(activeId);
-          // Si el campo está vacío, añade el texto. Si no, añade un espacio y el texto nuevo.
           campo.value += (campo.value ? ' ' : '') + text;
         }
       };
@@ -114,7 +160,6 @@
       };
 
       try {
-        // Enviamos los datos a Google Apps Script
         const response = await fetch(URL_API, {
           method: 'POST',
           body: JSON.stringify(datos)
@@ -123,12 +168,10 @@
         
         status.style.color = res.success ? "#27ae60" : "#e74c3c";
         status.textContent = res.mensaje;
-        if (res.success) {
-          document.getElementById('actaForm').reset();
-        }
+        if (res.success) document.getElementById('actaForm').reset();
       } catch (error) {
         status.style.color = "#e74c3c";
-        status.textContent = "Error de conexión. Revisa tu conexión a internet.";
+        status.textContent = "Error de conexión.";
       } finally {
         btn.disabled = false; btn.textContent = "Generar y Enviar Acta";
       }
