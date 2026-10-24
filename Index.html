@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acta de Reunión por Voz</title>
+  <style>
+    /* ... (Puedes pegar aquí los mismos estilos CSS que ya tenías para que se vea igual de bonito) ... */
+    body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+    .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
+    textarea { width: 100%; height: 80px; margin-top: 5px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+    .mic-btn { background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-top: 5px; }
+    .mic-btn.listening { background: #27ae60; animation: pulse 1.5s infinite; }
+    button[type="submit"] { width: 100%; margin-top: 25px; padding: 15px; background: #2980b9; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    #status { text-align: center; margin-top: 15px; font-weight: bold; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Acta de Reunión Inicial</h2>
+    <form id="actaForm">
+      <label>4. Acuerdos anteriores:</label>
+      <textarea id="acuerdos"></textarea>
+      <button type="button" class="mic-btn" onclick="dictar('acuerdos', this)">🎤 Dictar</button>
+
+      <label>5. Estado actual de la obra:</label>
+      <textarea id="estadoObra"></textarea>
+      <button type="button" class="mic-btn" onclick="dictar('estadoObra', this)">🎤 Dictar</button>
+
+      <label>6. Acceso personas autorizadas:</label>
+      <textarea id="acceso"></textarea>
+      <button type="button" class="mic-btn" onclick="dictar('acceso', this)">🎤 Dictar</button>
+
+      <label>7. Previsión de medidas:</label>
+      <textarea id="prevision"></textarea>
+      <button type="button" class="mic-btn" onclick="dictar('prevision', this)">🎤 Dictar</button>
+
+      <label>11. Fecha siguiente reunión:</label>
+      <textarea id="fechaReunion"></textarea>
+      <button type="button" class="mic-btn" onclick="dictar('fechaReunion', this)">🎤 Dictar</button>
+
+      <button type="submit" id="submitBtn">Generar y Enviar Acta</button>
+      <div id="status"></div>
+    </form>
+  </div>
+
+  <script>
+    // ⚠️ CAMBIA ESTO POR TU URL DEL PASO 2 ⚠️
+    const URL_API = "https://script.google.com/macros/s/AKfycbzhwEDwCVmoiW8K5iDGiBVz_E014HNGVMi-IsLFJePH69IO-3obYzM7Vv1gA43825y4/exec"; 
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition, activeBtn, activeId;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        let text = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) text += event.results[i][0].transcript + ' ';
+        }
+        if (text && activeId) document.getElementById(activeId).value += text;
+      };
+      recognition.onend = () => { if (activeBtn) activeBtn.classList.remove('listening'); };
+    }
+
+    function dictar(id, btn) {
+      if (!recognition) { alert("Usa Chrome o Edge para dictar."); return; }
+      if (activeBtn === btn) { recognition.stop(); activeBtn = null; activeId = null; return; }
+      if (recognition) recognition.stop();
+      activeId = id; activeBtn = btn;
+      btn.classList.add('listening');
+      recognition.start();
+    }
+
+    document.getElementById('actaForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const status = document.getElementById('status');
+      btn.disabled = true; btn.textContent = "Enviando...";
+      status.textContent = "";
+
+      const datos = {
+        acuerdos: document.getElementById('acuerdos').value,
+        estadoObra: document.getElementById('estadoObra').value,
+        acceso: document.getElementById('acceso').value,
+        prevision: document.getElementById('prevision').value,
+        fechaReunion: document.getElementById('fechaReunion').value,
+        municipio: "Écija"
+      };
+
+      try {
+        // Enviamos los datos a Google Apps Script
+        const response = await fetch(URL_API, {
+          method: 'POST',
+          body: JSON.stringify(datos)
+        });
+        const res = await response.json();
+        
+        status.style.color = res.success ? "#27ae60" : "#e74c3c";
+        status.textContent = res.mensaje;
+        if (res.success) document.getElementById('actaForm').reset();
+      } catch (error) {
+        status.style.color = "#e74c3c";
+        status.textContent = "Error de conexión.";
+      } finally {
+        btn.disabled = false; btn.textContent = "Generar y Enviar Acta";
+      }
+    };
+  </script>
+</body>
+</html>
