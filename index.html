@@ -86,7 +86,7 @@
   </div>
 
   <script>
-    // ⚠️ Asegúrate de que esta es tu URL de Apps Script
+    // ⚠️ Asegúrate de que esta es tu URL de Apps Script (la que termina en /exec)
     const URL_API = "https://script.google.com/macros/s/AKfycbzhwEDwCVmoiW8K5iDGIBVz_E014HNGVMi-lsLJePH69IO-3obYzM7Vv1gA43825y4/exec"; 
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -109,7 +109,6 @@
         }
       };
       
-      // Si el micrófono se apaga solo por inactividad, nos aseguramos de que el botón vuelva a rojo
       recognition.onend = () => { 
         if (activeBtn) {
           activeBtn.classList.remove('listening'); 
@@ -122,16 +121,14 @@
     function dictar(id, btn) {
       if (!recognition) { alert("Usa Chrome o Edge para dictar."); return; }
       
-      // Si el botón pulsado es el que ya está activo, lo apagamos
       if (activeBtn === btn) { 
         recognition.stop(); 
-        btn.classList.remove('listening'); // Forzamos el cambio visual a rojo
+        btn.classList.remove('listening');
         activeBtn = null; 
         activeId = null; 
         return; 
       }
       
-      // Si hay otro botón activo, lo apagamos antes de encender el nuevo
       if (activeBtn) {
         activeBtn.classList.remove('listening');
         try { recognition.stop(); } catch(e) {}
@@ -139,9 +136,8 @@
       
       activeId = id; 
       activeBtn = btn;
-      btn.classList.add('listening'); // Se pone verde
+      btn.classList.add('listening');
       
-      // Pequeño retraso para que Chrome asimile que se ha parado antes de volver a empezar
       setTimeout(() => {
         try {
           recognition.start();
@@ -170,19 +166,21 @@
       try {
         const response = await fetch(URL_API, {
           method: 'POST',
+          // Enviamos como texto plano para evitar el bloqueo del navegador
           body: JSON.stringify(datos),
-          // Usamos text/plain para evitar el bloqueo CORS de GitHub Pages a Google Script
           headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          }
+            'Content-Type': 'text/plain;charset=utf-8' 
+          },
+          redirect: 'follow' // Permite la redirección de Google
         });
+        
         const res = await response.json();
         
         status.style.color = res.success ? "#27ae60" : "#e74c3c";
         status.textContent = res.mensaje;
+        
         if (res.success) {
             document.getElementById('actaForm').reset();
-            // Si hay algún micro encendido, lo apagamos al terminar
             if (activeBtn) {
                 recognition.stop();
                 activeBtn.classList.remove('listening');
@@ -193,7 +191,7 @@
       } catch (error) {
         status.style.color = "#e74c3c";
         status.textContent = "Error de conexión.";
-        console.error(error);
+        console.error("Error detallado:", error);
       } finally {
         btn.disabled = false; btn.textContent = "Generar y Enviar Acta";
       }
