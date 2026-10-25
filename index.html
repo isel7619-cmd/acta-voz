@@ -164,33 +164,35 @@
       };
 
       try {
-        const response = await fetch(URL_API, {
+        // Usamos no-cors para evitar el bloqueo de seguridad del navegador
+        await fetch(URL_API, {
           method: 'POST',
-          // Enviamos como texto plano para evitar el bloqueo del navegador
+          mode: 'no-cors', 
           body: JSON.stringify(datos),
           headers: {
             'Content-Type': 'text/plain;charset=utf-8' 
-          },
-          redirect: 'follow' // Permite la redirección de Google
+          }
         });
+
+        // Como usamos no-cors, no podemos leer la respuesta.
+        // Asumimos que todo ha ido bien si no ha saltado un error de red.
+        status.style.color = "#27ae60";
+        status.textContent = "¡Acta enviada! Revisa tu correo en unos segundos.";
         
-        const res = await response.json();
+        // Vaciamos el formulario
+        document.getElementById('actaForm').reset();
         
-        status.style.color = res.success ? "#27ae60" : "#e74c3c";
-        status.textContent = res.mensaje;
-        
-        if (res.success) {
-            document.getElementById('actaForm').reset();
-            if (activeBtn) {
-                recognition.stop();
-                activeBtn.classList.remove('listening');
-                activeBtn = null;
-                activeId = null;
-            }
+        // Apagamos el micro si estaba encendido
+        if (activeBtn) {
+            recognition.stop();
+            activeBtn.classList.remove('listening');
+            activeBtn = null;
+            activeId = null;
         }
+
       } catch (error) {
         status.style.color = "#e74c3c";
-        status.textContent = "Error de conexión.";
+        status.textContent = "Error de red. Comprueba tu conexión a internet.";
         console.error("Error detallado:", error);
       } finally {
         btn.disabled = false; btn.textContent = "Generar y Enviar Acta";
