@@ -8,8 +8,7 @@
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; }
     
-    /* Contenedor principal (Móvil: ancho máximo 520px) */
-    .container { max-width: 900px;width: 95%; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: max-width 0.3s ease; }
+    .container { max-width: 900px; width: 95%; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: max-width 0.3s ease; }
     
     h2 { text-align: center; color: #2c3e50; margin-top: 0; }
     label { display: block; margin-top: 18px; font-weight: bold; font-size: 15px; color: #34495e; }
@@ -27,31 +26,11 @@
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     .guion { font-size: 12px; color: #7f8c8d; margin-top: 5px; margin-bottom: 5px; font-style: italic; line-height: 1.4; }
 
-    /* =========================================
-       DISEÑO PARA PORTÁTIL / PANTALLAS GRANDES
-       ========================================= */
     @media (min-width: 900px) {
-      .container {
-        max-width: 1100px; /* Se ensancha en el portátil */
-        padding: 40px;
-      }
-      
-      /* Creamos una cuadrícula de 2 columnas */
-      .grid-form {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px 40px; /* Separación entre filas y columnas */
-        align-items: start;
-      }
-
-      /* Hacemos que el botón de enviar y el estado ocupen todo el ancho abajo */
-      .full-width {
-        grid-column: 1 / -1;
-      }
-      
-      textarea {
-        min-height: 100px; /* Un poco más altos en el portátil */
-      }
+      .container { max-width: 1100px; padding: 40px; }
+      .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; align-items: start; }
+      .full-width { grid-column: 1 / -1; }
+      textarea { min-height: 100px; }
     }
   </style>
 </head>
@@ -60,7 +39,6 @@
     <h2>Acta de Reunión Inicial</h2>
     
     <form id="actaForm">
-      <!-- Envolvemos los campos en este div "grid-form" para el diseño en 2 columnas -->
       <div class="grid-form">
 
         <div>
@@ -131,16 +109,46 @@
         }
       };
       
-      recognition.onend = () => { if (activeBtn) activeBtn.classList.remove('listening'); };
+      // Si el micrófono se apaga solo por inactividad, nos aseguramos de que el botón vuelva a rojo
+      recognition.onend = () => { 
+        if (activeBtn) {
+          activeBtn.classList.remove('listening'); 
+          activeBtn = null;
+          activeId = null;
+        }
+      };
     }
 
     function dictar(id, btn) {
       if (!recognition) { alert("Usa Chrome o Edge para dictar."); return; }
-      if (activeBtn === btn) { recognition.stop(); activeBtn = null; activeId = null; return; }
-      if (recognition) recognition.stop();
-      activeId = id; activeBtn = btn;
-      btn.classList.add('listening');
-      recognition.start();
+      
+      // Si el botón pulsado es el que ya está activo, lo apagamos
+      if (activeBtn === btn) { 
+        recognition.stop(); 
+        btn.classList.remove('listening'); // Forzamos el cambio visual a rojo
+        activeBtn = null; 
+        activeId = null; 
+        return; 
+      }
+      
+      // Si hay otro botón activo, lo apagamos antes de encender el nuevo
+      if (activeBtn) {
+        activeBtn.classList.remove('listening');
+        try { recognition.stop(); } catch(e) {}
+      }
+      
+      activeId = id; 
+      activeBtn = btn;
+      btn.classList.add('listening'); // Se pone verde
+      
+      // Pequeño retraso para que Chrome asimile que se ha parado antes de volver a empezar
+      setTimeout(() => {
+        try {
+          recognition.start();
+        } catch(e) {
+          console.log("Error al iniciar: ", e);
+        }
+      }, 150); 
     }
 
     document.getElementById('actaForm').onsubmit = async function(e) {
@@ -162,16 +170,30 @@
       try {
         const response = await fetch(URL_API, {
           method: 'POST',
-          body: JSON.stringify(datos)
+          body: JSON.stringify(datos),
+          // Usamos text/plain para evitar el bloqueo CORS de GitHub Pages a Google Script
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          }
         });
         const res = await response.json();
         
         status.style.color = res.success ? "#27ae60" : "#e74c3c";
         status.textContent = res.mensaje;
-        if (res.success) document.getElementById('actaForm').reset();
+        if (res.success) {
+            document.getElementById('actaForm').reset();
+            // Si hay algún micro encendido, lo apagamos al terminar
+            if (activeBtn) {
+                recognition.stop();
+                activeBtn.classList.remove('listening');
+                activeBtn = null;
+                activeId = null;
+            }
+        }
       } catch (error) {
         status.style.color = "#e74c3c";
         status.textContent = "Error de conexión.";
+        console.error(error);
       } finally {
         btn.disabled = false; btn.textContent = "Generar y Enviar Acta";
       }
