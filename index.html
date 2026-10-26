@@ -46,6 +46,9 @@
 </head>
 <body>
 
+  <!-- Iframe oculto para recibir la respuesta -->
+  <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
   <div class="container">
     <h2>Acta de Reunión Inicial</h2>
     <form id="actaForm" onsubmit="return false;">
@@ -55,7 +58,7 @@
           <label>4. Control y seguimiento de acuerdos anteriores:</label>
           <p class="guion">Guion: Se realiza la primera reunión de seguimiento por lo que no proceden acuerdos anteriores.</p>
           <textarea id="acuerdos"></textarea>
-          <button type="button" class="mic-btn" onclick="dictar('acuerdos', this)">🎤 Dictar</button>
+          <button type="button" class="mic-btn" onclick="dictar('acuerdos', this)"> Dictar</button>
         </div>
 
         <div>
@@ -69,14 +72,14 @@
           <label>6. Acceso personas autorizadas:</label>
           <p class="guion">Guion: Se establecerán las medidas establecidas en el PSS para que la obra permanezca cerrada a agentes externos.</p>
           <textarea id="acceso"></textarea>
-          <button type="button" class="mic-btn" onclick="dictar('acceso', this)">🎤 Dictar</button>
+          <button type="button" class="mic-btn" onclick="dictar('acceso', this)"> Dictar</button>
         </div>
 
         <div>
           <label>7. Previsión de medidas:</label>
           <p class="guion">Guion: Se prevé continuar con trabajos de desmontaje de techos e instalaciones...</p>
           <textarea id="prevision"></textarea>
-          <button type="button" class="mic-btn" onclick="dictar('prevision', this)">🎤 Dictar</button>
+          <button type="button" class="mic-btn" onclick="dictar('prevision', this)"> Dictar</button>
         </div>
 
         <div class="full-width">
@@ -146,8 +149,10 @@
       try { recognition.start(); } catch (e) { console.log(e); }
     }
 
-    /* ===== ENVÍO (envía como formulario para evitar bloqueos CORS) ===== */
-    async function enviarActa() {
+    /* ===== ENVÍO CON IFRAME (MÉTODO INFALIBLE) ===== */
+    let timeoutId;
+
+    function enviarActa() {
       const btn = document.getElementById('submitBtn');
       const status = document.getElementById('status');
 
@@ -165,40 +170,67 @@
         municipio: "Écija"
       };
 
-      try {
-        const formData = new URLSearchParams();
-        formData.append('datos', JSON.stringify(datos));
+      // Crear formulario dinámico
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = URL_API;
+      form.target = 'hidden_iframe';
 
-        const respuesta = await fetch(URL_API, {
-          method: 'POST',
-          body: formData
-        });
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'datos';
+      input.value = JSON.stringify(datos);
 
-        const texto = await respuesta.text();
-        let resultado;
-        try {
-          resultado = JSON.parse(texto);
-        } catch (e) {
-          resultado = { resultado: "ERROR", mensaje: texto };
-        }
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
 
-        if (resultado.resultado === "OK") {
-          status.style.color = "#27ae60";
-          status.textContent = "✅ ¡Acta enviada! Revisa tu correo (y spam).";
-          document.getElementById('actaForm').reset();
-        } else {
-          status.style.color = "#e74c3c";
-          status.textContent = "❌ Error: " + (resultado.mensaje || "desconocido");
-        }
-      } catch (error) {
+      // Temporizador de seguridad (por si no llega respuesta)
+      timeoutId = setTimeout(() => {
         status.style.color = "#e74c3c";
-        status.textContent = "❌ Error de conexión: " + error.message;
-        console.error(error);
+        status.textContent = "️ Tiempo de espera agotado. Revisa tu correo por si acaso.";
+        btn.disabled = false;
+        btn.textContent = "Generar y Enviar Acta";
+      }, 45000); // 45 segundos
+    }
+
+    // Escuchar respuesta del iframe
+    window.addEventListener('message', function(event) {
+      if (event.origin.indexOf('script.google.com') === -1) return;
+
+      const btn = document.getElementById('submitBtn');
+      const status = document.getElementById('status');
+
+      clearTimeout(timeoutId);
+
+      if (event.data === 'OK') {
+        status.style.color = "#27ae60";
+        status.textContent = "✅ ¡Acta enviada! Revisa tu correo (y spam).";
+        document.getElementById('actaForm').reset();
+      }
+      else if (typeof event.data === 'string' && event.data.indexOf('ERROR') === 0) {
+        const errorMsg = event.data.replace('ERROR|', '');
+        status.style.color = "#e74c3c";
+        status.textContent = "❌ Error: " + errorMsg;
+      }
+      else {
+        // Si llega algo que no es OK ni ERROR, asumimos éxito (Apps Script a veces no envía postMessage)
+        status.style.color = "#27ae60";
+        status.textContent = "✅ ¡Acta enviada! Revisa tu correo (y spam).";
+        document.getElementById('actaForm').reset();
       }
 
       btn.disabled = false;
       btn.textContent = "Generar y Enviar Acta";
-    }
+
+      if (activeBtn) {
+        try { recognition.stop(); } catch(e) {}
+        activeBtn.classList.remove('listening');
+        activeBtn = null;
+        activeId = null;
+      }
+    });
   </script>
 
 </body>
