@@ -2,42 +2,146 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Prueba Diagnóstico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acta de Reunión por Voz</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; }
+    .container { max-width: 900px; width: 95%; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #2c3e50; margin-top: 0; }
+    label { display: block; margin-top: 18px; font-weight: bold; font-size: 15px; color: #34495e; }
+    textarea { width: 100%; min-height: 80px; margin-top: 6px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; }
+    .mic-btn { background: #e74c3c; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-top: 6px; font-size: 14px; }
+    .mic-btn.listening { background: #27ae60; animation: pulse 1.2s infinite; }
+    .submit-btn { width: 100%; margin-top: 28px; padding: 15px; background: #2980b9; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+    .submit-btn:disabled { background: #95a5a6; cursor: not-allowed; }
+    #status { text-align: center; margin-top: 16px; font-weight: bold; font-size: 16px; min-height: 20px; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .guion { font-size: 12px; color: #7f8c8d; margin-top: 5px; margin-bottom: 5px; font-style: italic; line-height: 1.4; }
+    @media (min-width: 900px) {
+      .container { max-width: 1100px; padding: 40px; }
+      .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; align-items: start; }
+      .full-width { grid-column: 1 / -1; }
+      textarea { min-height: 100px; }
+    }
+  </style>
 </head>
-<body style="font-family: Arial; padding: 20px;">
-  <h2>Prueba de Envío - Diagnóstico</h2>
-  
-  <p><strong>4. Acuerdos:</strong></p>
-  <textarea id="acuerdos" style="width:100%; height:60px;">Prueba de acuerdos</textarea>
-  
-  <p><strong>5. Estado Obra:</strong></p>
-  <textarea id="estadoObra" style="width:100%; height:60px;">Prueba de estado</textarea>
-  
-  <p><strong>6. Acceso:</strong></p>
-  <textarea id="acceso" style="width:100%; height:60px;">Prueba de acceso</textarea>
-  
-  <p><strong>7. Previsión:</strong></p>
-  <textarea id="prevision" style="width:100%; height:60px;">Prueba prevision</textarea>
-  
-  <p><strong>11. Fecha:</strong></p>
-  <textarea id="fechaReunion" style="width:100%; height:60px;">Prueba fecha</textarea>
-  
-  <br><br>
-  <button onclick="enviarActa()" style="padding: 20px 40px; font-size: 18px; background: #2980b9; color: white; border: none; cursor: pointer;">
-    GENERAR Y ENVIAR ACTA (PRUEBA)
-  </button>
-  
-  <p id="status" style="font-size: 18px; font-weight: bold;"></p>
-
+<body>
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 
+  <div class="container">
+    <h2>Acta de Reunión Inicial</h2>
+    <form id="actaForm">
+      <div class="grid-form">
+        <div>
+          <label>4. Control y seguimiento de acuerdos anteriores:</label>
+          <p class="guion">Guion: Se realiza la primera reunión de seguimiento por lo que no proceden acuerdos anteriores.</p>
+          <textarea id="acuerdos"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('acuerdos', this)">🎤 Dictar</button>
+        </div>
+        <div>
+          <label>5. Estado actual de la obra:</label>
+          <p class="guion">Guion: Se realizan trabajos de desmontaje de falso techo modular incluida antigua instalación de iluminación...</p>
+          <textarea id="estadoObra"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('estadoObra', this)">🎤 Dictar</button>
+        </div>
+        <div>
+          <label>6. Acceso personas autorizadas:</label>
+          <p class="guion">Guion: Se establecerán las medidas establecidas en el PSS para que la obra permanezca cerrada a agentes externos.</p>
+          <textarea id="acceso"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('acceso', this)">🎤 Dictar</button>
+        </div>
+        <div>
+          <label>7. Previsión de medidas:</label>
+          <p class="guion">Guion: Se prevé continuar con trabajos de desmontaje de techos e instalaciones...</p>
+          <textarea id="prevision"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('prevision', this)">🎤 Dictar</button>
+        </div>
+        <div class="full-width">
+          <label>11. Fecha siguiente reunión:</label>
+          <p class="guion">Guion: Será convocada por el coordinador. (En 15 días).</p>
+          <textarea id="fechaReunion"></textarea>
+          <button type="button" class="mic-btn" onclick="dictar('fechaReunion', this)">🎤 Dictar</button>
+        </div>
+        <div class="full-width">
+          <button type="button" class="submit-btn" id="submitBtn" onclick="enviarActa()">Generar y Enviar Acta</button>
+          <div id="status"></div>
+        </div>
+      </div>
+    </form>
+  </div>
+
   <script>
-    const URL_API = "https://script.google.com/macros/s/AKfycbzhwEDwCVmoiW8K5iDGIBVz_E014HNGVMi-lsLJePH69IO-3obYzM7Vv1gA43825y4/exec"; 
+    // ⚠️ PEGA AQUÍ LA URL DE TU APPS SCRIPT (la que copiaste después de desplegar)
+    const URL_API = "PEGA_AQUÍ_TU_URL_DE_APPS_SCRIPT";
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition, activeBtn, activeId;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        let text = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) text += event.results[i][0].transcript + ' ';
+        }
+        if (text && activeId) {
+          const campo = document.getElementById(activeId);
+          campo.value += (campo.value ? ' ' : '') + text;
+        }
+      };
+      recognition.onend = () => {
+        if (activeBtn) { activeBtn.classList.remove('listening'); activeBtn = null; activeId = null; }
+      };
+      recognition.onerror = (event) => {
+        console.error("Error de dictado:", event.error);
+        if (activeBtn) { activeBtn.classList.remove('listening'); activeBtn = null; activeId = null; }
+        if (event.error === 'not-allowed') {
+          alert("Permiso de micrófono denegado. Haz clic en el candado 🔒 de la barra de direcciones y permite el micrófono.");
+        }
+      };
+    }
+
+    function dictar(id, btn) {
+      if (!recognition) {
+        alert("Tu navegador no soporta dictado por voz. Usa Chrome, Edge o Safari.");
+        return;
+      }
+      if (activeBtn === btn) {
+        recognition.stop();
+        btn.classList.remove('listening');
+        activeBtn = null;
+        activeId = null;
+        return;
+      }
+      if (activeBtn) {
+        activeBtn.classList.remove('listening');
+        try { recognition.stop(); } catch (e) {}
+      }
+      activeId = id;
+      activeBtn = btn;
+      btn.classList.add('listening');
+      try {
+        recognition.start();
+      } catch (e) {
+        console.log("Error al iniciar dictado:", e);
+      }
+    }
 
     function enviarActa() {
-      alert("PASO 1: Botón pulsado. La función JavaScript SÍ se está ejecutando.");
-      
-      var datos = {
+      const btn = document.getElementById('submitBtn');
+      const status = document.getElementById('status');
+
+      btn.disabled = true;
+      btn.textContent = "Generando y enviando...";
+      status.style.color = "#2980b9";
+      status.textContent = "⏳ Procesando... (tardará unos 30 segundos)";
+
+      const datos = {
         acuerdos: document.getElementById('acuerdos').value,
         estadoObra: document.getElementById('estadoObra').value,
         acceso: document.getElementById('acceso').value,
@@ -45,38 +149,37 @@
         fechaReunion: document.getElementById('fechaReunion').value,
         municipio: "Écija"
       };
-      
-      alert("PASO 2: Datos recogidos correctamente. Preparando envío...");
-      
-      try {
-        // Crear formulario oculto
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = URL_API;
-        form.target = 'hidden_iframe';
-        
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'datos';
-        input.value = JSON.stringify(datos);
-        
-        form.appendChild(input);
-        document.body.appendChild(form);
-        
-        alert("PASO 3: Formulario creado. A punto de enviar a Google...");
-        
-        form.submit();
-        
-        alert("PASO 4: ¡Envío realizado! Esperando respuesta de Google...");
-        
-        document.getElementById('status').style.color = "green";
-        document.getElementById('status').textContent = "✅ Petición enviada. Revisa tu correo en 1 minuto.";
-        
-      } catch (error) {
-        alert("ERROR CRÍTICO: " + error.message);
-        document.getElementById('status').style.color = "red";
-        document.getElementById('status').textContent = "Error: " + error.message;
-      }
+
+      // Método de formulario oculto (infalible, sin errores de red)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = URL_API;
+      form.target = 'hidden_iframe';
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'datos';
+      input.value = JSON.stringify(datos);
+
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+
+      // Feedback visual
+      setTimeout(() => {
+        status.style.color = "#27ae60";
+        status.textContent = "✅ ¡Acta enviada! Revisa tu correo en 1 minuto.";
+        document.getElementById('actaForm').reset();
+        btn.disabled = false;
+        btn.textContent = "Generar y Enviar Acta";
+        if (activeBtn) {
+          recognition.stop();
+          activeBtn.classList.remove('listening');
+          activeBtn = null;
+          activeId = null;
+        }
+      }, 4000);
     }
   </script>
 </body>
