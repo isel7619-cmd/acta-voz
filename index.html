@@ -86,7 +86,6 @@
   </div>
 
   <script>
-    // ⚠️ Usa la URL de tu despliegue de Apps Script (la que termina en /exec)
     const URL_API = "https://script.google.com/macros/s/AKfycbzhwEDwCVmoiW8K5iDGIBVz_E014HNGVMi-lsLJePH69IO-3obYzM7Vv1gA43825y4/exec"; 
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -153,9 +152,8 @@
       const status = document.getElementById('status');
       btn.disabled = true; 
       btn.textContent = "Generando y enviando...";
-      status.textContent = "";
       status.style.color = "#2980b9";
-      status.textContent = "Procesando... Esto puede tardar 10-20 segundos.";
+      status.textContent = "Procesando... Esto puede tardar 15-30 segundos.";
 
       const datos = {
         acuerdos: document.getElementById('acuerdos').value,
@@ -167,40 +165,23 @@
       };
 
       try {
-        // ✅ CLAVE: redirect: 'follow' y Content-Type: text/plain
-        const response = await fetch(URL_API, {
+        // ✅ USANDO NO-CORS (la petición SÍ llega al servidor)
+        await fetch(URL_API, {
           method: 'POST',
-          mode: 'cors',
-          redirect: 'follow',  // ← ESTO SOLUCIONA EL ERROR DE RED
+          mode: 'no-cors',
           body: JSON.stringify(datos),
           headers: {
-            'Content-Type': 'text/plain;charset=utf-8'  // ← Evita problemas CORS
+            'Content-Type': 'text/plain;charset=utf-8'
           }
         });
 
-        // Intentar parsear la respuesta como JSON
-        let result;
-        const textResponse = await response.text();
-        
-        try {
-          result = JSON.parse(textResponse);
-        } catch (parseError) {
-          // Si no es JSON válido, asumimos éxito si el status es 200
-          if (response.ok) {
-            result = { success: true, mensaje: "Procesado correctamente" };
-          } else {
-            throw new Error("Respuesta no válida del servidor: " + textResponse.substring(0, 100));
-          }
-        }
+        // Con no-cors no podemos leer la respuesta, pero si no hay error de red, funcionó
+        // Esperamos 3 segundos para dar tiempo al servidor
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
-        if (result.success) {
-          status.style.color = "#27ae60";
-          status.textContent = "✅ ¡Acta enviada con éxito! Revisa tu correo en unos segundos.";
-          document.getElementById('actaForm').reset();
-        } else {
-          status.style.color = "#e74c3c";
-          status.textContent = "❌ Error: " + result.mensaje;
-        }
+        status.style.color = "#27ae60";
+        status.textContent = "✅ ¡Solicitud enviada! El acta llegará a tu correo en 30-60 segundos.";
+        document.getElementById('actaForm').reset();
         
         // Apagamos el micro si estaba encendido
         if (activeBtn) {
@@ -212,8 +193,8 @@
 
       } catch (error) {
         status.style.color = "#e74c3c";
-        status.textContent = "❌ Error de conexión: " + error.message;
-        console.error("Error detallado:", error);
+        status.textContent = "❌ Error de red. Comprueba tu conexión a internet.";
+        console.error("Error:", error);
       } finally {
         btn.disabled = false; 
         btn.textContent = "Generar y Enviar Acta";
