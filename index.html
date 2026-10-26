@@ -164,30 +164,33 @@
       };
 
       try {
-        // Usamos no-cors para evitar el bloqueo de seguridad del navegador
-        await fetch(URL_API, {
+        // ✅ USANDO CORS CORRECTO (sin no-cors)
+        const response = await fetch(URL_API, {
           method: 'POST',
-          mode: 'no-cors', 
+          mode: 'cors',
           body: JSON.stringify(datos),
           headers: {
-            'Content-Type': 'text/plain;charset=utf-8' 
+            'Content-Type': 'application/json'
           }
         });
 
-        // Como usamos no-cors, no podemos leer la respuesta.
-        // Asumimos que todo ha ido bien si no ha saltado un error de red.
-        status.style.color = "#27ae60";
-        status.textContent = "¡Acta enviada! Revisa tu correo en unos segundos.";
-        
-        // Vaciamos el formulario
-        document.getElementById('actaForm').reset();
+        const result = await response.json();
+
+        if (result.success) {
+          status.style.color = "#27ae60";
+          status.textContent = "¡Acta enviada! Revisa tu correo en unos segundos.";
+          document.getElementById('actaForm').reset();
+        } else {
+          status.style.color = "#e74c3c";
+          status.textContent = "Error: " + result.mensaje;
+        }
         
         // Apagamos el micro si estaba encendido
         if (activeBtn) {
-            recognition.stop();
-            activeBtn.classList.remove('listening');
-            activeBtn = null;
-            activeId = null;
+          recognition.stop();
+          activeBtn.classList.remove('listening');
+          activeBtn = null;
+          activeId = null;
         }
 
       } catch (error) {
@@ -195,7 +198,8 @@
         status.textContent = "Error de red. Comprueba tu conexión a internet.";
         console.error("Error detallado:", error);
       } finally {
-        btn.disabled = false; btn.textContent = "Generar y Enviar Acta";
+        btn.disabled = false; 
+        btn.textContent = "Generar y Enviar Acta";
       }
     };
   </script>
