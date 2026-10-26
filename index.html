@@ -1,6 +1,3 @@
-Aquí tienes el **HTML completo y listo para subir a GitHub Pages**, con tu URL de Apps Script ya incluida:
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -49,13 +46,9 @@ Aquí tienes el **HTML completo y listo para subir a GitHub Pages**, con tu URL 
 </head>
 <body>
 
-  <!-- Iframe oculto para recibir la respuesta del servidor sin recargar la página -->
-  <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-
   <div class="container">
     <h2>Acta de Reunión Inicial</h2>
     <form id="actaForm" onsubmit="return false;">
-
       <div class="grid-form">
 
         <div>
@@ -103,10 +96,9 @@ Aquí tienes el **HTML completo y listo para subir a GitHub Pages**, con tu URL 
   </div>
 
   <script>
-    // ⚠️ URL DE TU APLICACIÓN WEB (Apps Script)
     const URL_API = "https://script.google.com/macros/s/AKfycbyfmnt_khPTuyQXrSW0q7I0OCtdkcG6-4Yia27GhHZK3tqAJuYFgCnskKA-C7JvkTjHVg/exec";
 
-    /* ================= DICTADO POR VOZ ================= */
+    /* ===== DICTADO POR VOZ ===== */
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition, activeBtn, activeId;
 
@@ -126,52 +118,36 @@ Aquí tienes el **HTML completo y listo para subir a GitHub Pages**, con tu URL 
           campo.value += (campo.value ? ' ' : '') + text;
         }
       };
-
       recognition.onend = () => {
-        if (activeBtn) {
-          activeBtn.classList.remove('listening');
-          activeBtn = null;
-          activeId = null;
-        }
+        if (activeBtn) { activeBtn.classList.remove('listening'); activeBtn = null; activeId = null; }
       };
-
       recognition.onerror = (event) => {
-        console.error("Error de dictado:", event.error);
-        if (activeBtn) {
-          activeBtn.classList.remove('listening');
-          activeBtn = null;
-          activeId = null;
-        }
+        if (activeBtn) { activeBtn.classList.remove('listening'); activeBtn = null; activeId = null; }
         if (event.error === 'not-allowed') {
-          alert("Permiso de micrófono denegado. Permite el micrófono en el candado 🔒 de la barra de direcciones.");
+          alert("Permiso de micrófono denegado. Permítelo en el candado 🔒 de la barra de direcciones.");
         }
       };
     }
 
     function dictar(id, btn) {
-      if (!recognition) {
-        alert("Tu navegador no soporta dictado por voz. Usa Chrome, Edge o Safari.");
-        return;
-      }
+      if (!recognition) { alert("Tu navegador no soporta dictado por voz. Usa Chrome o Edge."); return; }
       if (activeBtn === btn) {
         recognition.stop();
         btn.classList.remove('listening');
-        activeBtn = null;
-        activeId = null;
+        activeBtn = null; activeId = null;
         return;
       }
       if (activeBtn) {
         activeBtn.classList.remove('listening');
         try { recognition.stop(); } catch (e) {}
       }
-      activeId = id;
-      activeBtn = btn;
+      activeId = id; activeBtn = btn;
       btn.classList.add('listening');
-      try { recognition.start(); } catch (e) { console.log("Error al iniciar:", e); }
+      try { recognition.start(); } catch (e) { console.log(e); }
     }
 
-    /* ================= ENVÍO DEL FORMULARIO ================= */
-    function enviarActa() {
+    /* ===== ENVÍO (envía como formulario para evitar bloqueos CORS) ===== */
+    async function enviarActa() {
       const btn = document.getElementById('submitBtn');
       const status = document.getElementById('status');
 
@@ -189,64 +165,41 @@ Aquí tienes el **HTML completo y listo para subir a GitHub Pages**, con tu URL 
         municipio: "Écija"
       };
 
-      // Crear formulario oculto dinámico y enviarlo al iframe oculto
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = URL_API;
-      form.target = 'hidden_iframe';
+      try {
+        const formData = new URLSearchParams();
+        formData.append('datos', JSON.stringify(datos));
 
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'datos';
-      input.value = JSON.stringify(datos);
+        const respuesta = await fetch(URL_API, {
+          method: 'POST',
+          body: formData
+        });
 
-      form.appendChild(input);
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-    }
+        const texto = await respuesta.text();
+        let resultado;
+        try {
+          resultado = JSON.parse(texto);
+        } catch (e) {
+          resultado = { resultado: "ERROR", mensaje: texto };
+        }
 
-    /* ================= ESCUCHAR RESPUESTA DEL SERVIDOR ================= */
-    window.addEventListener('message', function(event) {
-      // Seguridad: solo aceptar mensajes provenientes de Google
-      if (event.origin.indexOf('script.google.com') === -1) return;
-
-      const btn = document.getElementById('submitBtn');
-      const status = document.getElementById('status');
-
-      if (event.data === 'OK') {
-        status.style.color = "#27ae60";
-        status.textContent = "✅ ¡Acta enviada! Revisa tu correo.";
-        document.getElementById('actaForm').reset();
-        btn.disabled = false;
-        btn.textContent = "Generar y Enviar Acta";
-      }
-      else if (typeof event.data === 'string' && event.data.indexOf('ERROR') === 0) {
-        const errorMsg = event.data.replace('ERROR|', '');
+        if (resultado.resultado === "OK") {
+          status.style.color = "#27ae60";
+          status.textContent = "✅ ¡Acta enviada! Revisa tu correo (y spam).";
+          document.getElementById('actaForm').reset();
+        } else {
+          status.style.color = "#e74c3c";
+          status.textContent = "❌ Error: " + (resultado.mensaje || "desconocido");
+        }
+      } catch (error) {
         status.style.color = "#e74c3c";
-        status.textContent = "❌ Error: " + errorMsg;
-        btn.disabled = false;
-        btn.textContent = "Reintentar";
+        status.textContent = "❌ Error de conexión: " + error.message;
+        console.error(error);
       }
 
-      // Detener el micrófono si quedó activo
-      if (activeBtn) {
-        try { recognition.stop(); } catch(e) {}
-        activeBtn.classList.remove('listening');
-        activeBtn = null;
-        activeId = null;
-      }
-    });
+      btn.disabled = false;
+      btn.textContent = "Generar y Enviar Acta";
+    }
   </script>
 
 </body>
 </html>
-```
-
-### 📋 Antes de usarlo, verifica estos 3 puntos:
-
-1. **En Apps Script**, el manifiesto `appsscript.json` debe tener los scopes de Gmail (como te pasé antes).
-2. **Ejecuta la función `autorizarPermisos()`** una vez en el editor para aceptar los permisos.
-3. **La Web App debe estar desplegada** como: *"Cualquier persona, incluso anónimos"*.
-
-Si algo falla, ahora verás el error exacto en rojo dentro de la página en lugar de quedarse cargando.
