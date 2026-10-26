@@ -165,19 +165,31 @@
       };
 
       try {
-        // ✅ USANDO NO-CORS (la petición SÍ llega al servidor)
+        // ✅ CÓDIGO A PRUEBA DE BLOQUEOS
+        status.textContent = "⏳ Generando documento... (Tarda unos 30 segundos, espera por favor)";
+        
         await fetch(URL_API, {
           method: 'POST',
-          mode: 'no-cors',
-          body: JSON.stringify(datos),
+          mode: 'no-cors', // Obliga al navegador a no bloquear por CORS
+          cache: 'no-cache',
           headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          }
+            'Content-Type': 'text/plain' // ⚠️ SOLO text/plain, SIN "charset=utf-8"
+          },
+          body: JSON.stringify(datos)
         });
 
-        // Con no-cors no podemos leer la respuesta, pero si no hay error de red, funcionó
-        // Esperamos 3 segundos para dar tiempo al servidor
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Como usamos no-cors, el navegador responde al instante. 
+        // Pero Google tarda unos segundos en crear el Word y enviar el mail.
+        status.style.color = "#27ae60";
+        status.textContent = "✅ ¡Petición recibida por Google! El correo llegará en menos de 1 minuto.";
+        document.getElementById('actaForm').reset();
+        
+      } catch (error) {
+        status.style.color = "#e74c3c";
+        // Si entra aquí, es un bloqueo extremo del navegador
+        status.textContent = "❌ Bloqueo del navegador. Revisa el Paso 3.";
+        console.error("Error:", error);
+      }
 
         status.style.color = "#27ae60";
         status.textContent = "✅ ¡Solicitud enviada! El acta llegará a tu correo en 30-60 segundos.";
